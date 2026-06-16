@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>모여라 — 단체 일정 조율</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  :root{
+    --paper:#e9e2d3; --card:#f6f2e9; --fill:#ece5d6; --fill-2:#e3dac8;
+    --ink:#211d17; --ink-2:#544c40; --muted:#938873;
+    --line:rgba(33,29,23,.13); --line-2:rgba(33,29,23,.26); --line-3:rgba(33,29,23,.42);
+    --accent:#bf4a32; --accent-2:#9a3621; --avail:#7d976a; --pref:#cf9a3e; --danger:#a93a2c;
+    --serif:"Noto Serif KR",serif; --sans:"Pretendard","Apple SD Gothic Neo",-apple-system,sans-serif;
+    --display:"Fraunces",var(--serif); --r:9px; --r-sm:6px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:var(--sans); background:var(--paper);
+    background-image:radial-gradient(circle at 18% 0%,rgba(191,74,50,.05),transparent 42%),radial-gradient(circle at 90% 8%,rgba(125,151,106,.06),transparent 40%);
+    color:var(--ink); line-height:1.55; font-size:15px; letter-spacing:.005em; -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent); color:#fff;}
+  a{color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(191,74,50,.35);}
+  .app{max-width:1080px; margin:0 auto; padding:0 22px 90px;}
+
+  /* masthead */
+  header.top{padding:30px 0 20px; border-bottom:1px solid var(--line-2);}
+  header.top .kicker{font-family:var(--display); font-size:12px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:10px;}
+  header.top .kicker::before{content:""; width:26px; height:1px; background:var(--accent);}
+  .masthead-row{display:flex; align-items:flex-end; justify-content:space-between; gap:16px;}
+  header.top h1{font-family:var(--serif); font-weight:700; font-size:clamp(36px,8vw,58px); line-height:.98; margin:0; letter-spacing:-.01em;}
+  header.top .sub{color:var(--ink-2); font-size:14px; margin-top:12px; max-width:46ch; font-style:italic; font-family:var(--display);}
+  #authBar{display:flex; align-items:center; gap:12px; font-size:13px; color:var(--ink-2); padding-bottom:7px; white-space:nowrap;}
+  #authBar .uemail{font-family:var(--display); font-style:italic;}
+
+  /* tabs */
+  .tabs{display:flex; gap:2px; position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:1px solid var(--line-2); margin:0 0 30px; padding-top:4px;}
+  .tabs button{flex:1; border:0; background:transparent; color:var(--muted); padding:15px 6px 13px; font-family:var(--sans); font-size:14.5px; font-weight:600; cursor:pointer; position:relative; transition:color .2s; display:flex; align-items:baseline; justify-content:center; gap:8px; white-space:nowrap;}
+  .tabs button .tn{font-family:var(--display); font-size:11px; font-weight:600; color:var(--muted); transition:color .2s;}
+  .tabs button:hover{color:var(--ink-2);}
+  .tabs button.active{color:var(--ink);}
+  .tabs button.active .tn{color:var(--accent);}
+  .tabs button.active::after{content:""; position:absolute; left:8%; right:8%; bottom:-1px; height:2px; background:var(--accent);}
+  .tabs button .badge{font-size:11px; opacity:.85;}
+
+  /* cards */
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:26px 26px 28px; margin-bottom:20px; box-shadow:0 1px 0 rgba(33,29,23,.03);}
+  .card h2{font-family:var(--serif); margin:0 0 6px; font-size:23px; font-weight:600; letter-spacing:-.01em; line-height:1.2;}
+  .card .hint{color:var(--muted); font-size:13.5px; margin:0 0 20px; max-width:56ch;}
+  label.fld{display:block; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:18px 0 7px; font-weight:700;}
+  input[type=text],input[type=email],input[type=password],input[type=date],input[type=time],input[type=number],select,textarea{
+    width:100%; background:var(--fill); border:1px solid var(--line-2); color:var(--ink);
+    padding:12px 13px; border-radius:var(--r-sm); font-size:15px; font-family:inherit; transition:border-color .15s,background .15s;
+  }
+  input:focus,select:focus,textarea:focus{outline:0; border-color:var(--accent); background:#fbf8f1;}
+  input:disabled,select:disabled{opacity:.6; cursor:not-allowed;}
+  textarea{resize:vertical; min-height:80px; line-height:1.6;}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  .row>*{flex:1; min-width:120px;}
+
+  /* buttons */
+  .btn{border:1px solid var(--line-3); border-radius:999px; padding:11px 18px; font-size:13.5px; font-weight:600; cursor:pointer; background:transparent; color:var(--ink); font-family:inherit; transition:.16s; letter-spacing:.01em;}
+  .btn:hover{border-color:var(--ink); background:rgba(33,29,23,.04);}
+  .btn.primary{background:var(--ink); border-color:var(--ink); color:var(--paper);}
+  .btn.primary:hover{background:#000;}
+  .btn.primary:disabled{opacity:.45; cursor:default;}
+  .btn.ghost{border-color:transparent;}
+  .btn.ghost:hover{border-color:var(--line-3); background:transparent;}
+  .btn.sm{padding:7px 13px; font-size:12.5px;}
+  .btn.block{width:100%; justify-content:center; display:flex; padding:13px;}
+  .btn.danger{color:var(--danger); border-color:transparent; background:transparent;}
+  .btn.danger:hover{background:rgba(169,58,44,.1); border-color:transparent;}
+
+  /* departments */
+  .dept-list{display:flex; flex-direction:column; gap:9px;}
+  .dept-item{display:flex; align-items:center; gap:12px; background:var(--fill); border:1px solid var(--line); border-radius:var(--r-sm); padding:11px 13px;}
+  .dept-item input[type=color]{width:30px;height:30px;padding:0;border:1px solid var(--line-2);background:none;border-radius:50%;cursor:pointer;flex:0 0 auto;overflow:hidden;}
+  .dept-item input[type=color]::-webkit-color-swatch-wrapper{padding:0;}
+  .dept-item input[type=color]::-webkit-color-swatch{border:0;border-radius:50%;}
+  .dept-item input.dept-name{flex:1; background:transparent; border:0; padding:6px 2px; font-size:16px; font-weight:600; font-family:var(--serif); min-width:60px;}
+  .dept-item input.dept-name:focus{background:transparent; border-bottom:1px solid var(--line-2);}
+  .dept-item .count{color:var(--muted); font-size:11px; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; font-weight:700;}
+
+  /* roster / members */
+  .member-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:9px;}
+  .member{display:flex; align-items:center; gap:9px; background:var(--fill); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 12px;}
+  .member .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+  .member .mname{flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .member .mdept{font-size:10.5px; color:var(--muted); letter-spacing:.06em; margin-top:1px;}
+  .empty{color:var(--muted); text-align:center; padding:34px 10px; font-size:14px; font-family:var(--display); font-style:italic;}
+
+  /* availability grid */
+  .who-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px;}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--ink-2); margin-bottom:14px; letter-spacing:.02em;}
+  .legend span{display:inline-flex; align-items:center; gap:7px;}
+  .swatch{width:13px;height:13px;border-radius:3px;display:inline-block;border:1px solid var(--line-2);}
+  .paint-modes{display:flex; gap:6px;}
+  .paint-modes button{border:1px solid var(--line-2); background:var(--fill); color:var(--ink); border-radius:999px; padding:8px 14px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; transition:.15s;}
+  .paint-modes button.sel{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+  .grid-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line-2); border-radius:var(--r-sm);}
+  table.grid{border-collapse:collapse; user-select:none; width:max-content; min-width:100%;}
+  table.grid th{position:sticky; top:0; background:var(--card); font-family:var(--serif); font-size:12.5px; font-weight:600; color:var(--ink); padding:10px 8px; z-index:2; border-bottom:1px solid var(--line-2); white-space:nowrap;}
+  table.grid td.tlabel,table.grid th.tlabel{position:sticky; left:0; background:var(--card); color:var(--muted); font-size:11px; font-family:var(--display); padding:2px 11px; text-align:right; white-space:nowrap; z-index:1; border-right:1px solid var(--line-2);}
+  table.grid th.tlabel{z-index:3;}
+  table.grid td.slot{width:60px; height:27px; border:1px solid var(--line); cursor:pointer; transition:background .05s;}
+  table.grid tr.hourline td{border-top:1px solid var(--line-2);}
+  .slot.lvl0{background:var(--fill);}
+  .slot.lvl1{background:var(--avail);}
+  .slot.lvl2{background:var(--pref);}
+
+  /* results heatmap */
+  .filters{display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin-bottom:16px;}
+  .chip{border:1px solid var(--line-2); background:transparent; color:var(--ink-2); border-radius:999px; padding:6px 13px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; transition:.15s; display:inline-flex; align-items:center;}
+  .chip:hover{border-color:var(--ink);}
+  .chip.on{background:var(--ink); border-color:var(--ink); color:var(--paper);}
+  .best{display:flex; flex-direction:column; gap:0; margin-bottom:22px; border-top:1px solid var(--line-2);}
+  .best-item{display:flex; align-items:center; gap:16px; padding:14px 4px; border-bottom:1px solid var(--line); cursor:pointer; transition:.15s;}
+  .best-item:hover{padding-left:10px; background:linear-gradient(90deg,rgba(191,74,50,.05),transparent);}
+  .best-item .rank{font-family:var(--display); font-size:24px; font-weight:500; color:var(--accent); width:34px; flex:0 0 auto; line-height:1;}
+  .best-item .when{flex:1; font-weight:600; font-size:16px; font-family:var(--serif);}
+  .best-item .stat{font-size:12.5px; color:var(--muted); letter-spacing:.02em; text-align:right;}
+  .heat td.slot{cursor:pointer;}
+  .mini{font-size:11px;color:#2a160f;font-weight:700;text-align:center;line-height:27px;font-family:var(--display);}
+  .detail{background:var(--fill); border:1px solid var(--line-2); border-radius:var(--r-sm); padding:18px; margin-top:16px;}
+  .detail h3{font-family:var(--serif); margin:0 0 14px; font-size:16px; font-weight:600;}
+  .detail .grp{margin-bottom:12px;}
+  .detail .grp .ttl{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:7px; font-weight:700;}
+  .names{display:flex; gap:6px; flex-wrap:wrap;}
+  .names .n{font-size:13px; padding:4px 10px; border-radius:var(--r-sm); background:var(--card); border:1px solid var(--line);}
+
+  /* share + stat */
+  .share-box{background:var(--fill); border:1px solid var(--line); border-radius:var(--r-sm); padding:18px; margin-bottom:14px;}
+  .share-box .lbl{font-family:var(--serif); font-size:16px; font-weight:600; margin-bottom:6px;}
+  .share-box .desc{font-size:13px; color:var(--ink-2); margin-bottom:13px; line-height:1.6;}
+  .linkrow{display:flex; gap:8px;}
+  .linkrow input{font-size:12px; font-family:var(--display);}
+  .stat-row{display:flex; gap:0; flex-wrap:wrap; margin-top:10px; border:1px solid var(--line-2); border-radius:var(--r-sm); overflow:hidden;}
+  .stat-row .box{flex:1; min-width:90px; background:var(--fill); padding:16px 12px; text-align:center; border-right:1px solid var(--line);}
+  .stat-row .box:last-child{border-right:0;}
+  .stat-row .box b{font-size:30px; display:block; font-family:var(--display); font-weight:500; line-height:1;}
+  .stat-row .box span{font-size:10.5px; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; font-weight:700; margin-top:6px; display:block;}
+
+  /* auth + dashboard */
+  .center-wrap{max-width:430px; margin:46px auto 0;}
+  .seg{display:flex; gap:4px; background:var(--fill); border:1px solid var(--line-2); border-radius:999px; padding:4px; margin-bottom:22px;}
+  .seg button{flex:1; border:0; background:transparent; padding:11px; border-radius:999px; font-family:inherit; font-weight:600; font-size:14px; color:var(--muted); cursor:pointer; transition:.15s;}
+  .seg button.on{background:var(--ink); color:var(--paper);}
+  .err{color:var(--danger); font-size:13px; margin-top:12px; min-height:18px; line-height:1.5;}
+  .ok{color:var(--avail); font-size:13px; margin-top:12px; line-height:1.5;}
+  .dash-head{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:18px; flex-wrap:wrap;}
+  .dash-head h2{font-family:var(--serif); font-size:26px; margin:0; font-weight:600;}
+  .evt-list{display:grid; gap:12px;}
+  .evt-card{display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; cursor:pointer; transition:.15s;}
+  .evt-card:hover{border-color:var(--ink); transform:translateY(-1px);}
+  .evt-card .et{flex:1; min-width:0;}
+  .evt-card .et h3{font-family:var(--serif); font-size:19px; margin:0 0 3px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .evt-card .et .meta{font-size:12px; color:var(--muted); letter-spacing:.03em;}
+  .evt-card .role{font-size:10px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; color:var(--accent); border:1px solid var(--line-2); border-radius:999px; padding:4px 9px;}
+  .back-link{background:none; border:0; color:var(--muted); font-family:var(--display); font-style:italic; font-size:14px; cursor:pointer; padding:0; margin-bottom:14px;}
+  .back-link:hover{color:var(--ink);}
+  .evt-title{font-family:var(--serif); font-size:30px; font-weight:700; margin:2px 0 4px; letter-spacing:-.01em;}
+  .evt-sub{color:var(--muted); font-size:13px; margin-bottom:24px; letter-spacing:.02em;}
+  .banner{background:rgba(191,74,50,.08); border:1px solid rgba(191,74,50,.3); border-radius:var(--r-sm); padding:14px 16px; margin-bottom:18px; font-size:13.5px; color:var(--ink-2); display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .banner b{color:var(--ink);}
+
+  /* modal */
+  .modal{position:fixed; inset:0; background:rgba(33,29,23,.45); display:grid; place-items:center; z-index:80; padding:20px;}
+  .modal-card{background:var(--card); border:1px solid var(--line-2); border-radius:var(--r); padding:26px; max-width:420px; width:100%; box-shadow:0 24px 70px rgba(33,29,23,.32);}
+  .modal-card h2{font-family:var(--serif); margin:0 0 6px; font-size:22px; font-weight:600;}
+  .modal-card .hint{color:var(--muted); font-size:13px; margin:0 0 14px;}
+
+  .toast{position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(8px); background:var(--ink); color:var(--paper); padding:13px 22px; border-radius:999px; font-weight:600; font-size:13.5px; opacity:0; transition:.28s; pointer-events:none; z-index:99; box-shadow:0 8px 30px rgba(33,29,23,.25);}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  footer.sig{text-align:center; color:var(--muted); font-size:11px; letter-spacing:.18em; text-transform:uppercase; padding:34px 0 0; font-family:var(--display);}
+  .spin{text-align:center; padding:60px 0; color:var(--muted); font-family:var(--display); font-style:italic;}
+
+  @media (max-width:560px){
+    .app{padding:0 14px 80px;}
+    header.top{padding:24px 0 16px;}
+    .tabs button{font-size:13px; padding:13px 3px;}
+    .tabs button .tn{display:none;}
+    .card{padding:20px 18px 22px;}
+    .card h2{font-size:20px;}
+    .masthead-row{flex-direction:column; align-items:flex-start; gap:10px;}
+    #authBar{padding-bottom:0;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="kicker">Schedule · 일정 조율</div>
+    <div class="masthead-row">
+      <h1>모여라</h1>
+      <div id="authBar"></div>
+    </div>
+    <div class="sub">함께 만드는 사람들을 위한 시간 맞추기 — 연출·기획·편집, 각자의 가능한 시간을 한 장면에.</div>
+  </header>
+
+  <div id="screen"><div class="spin">불러오는 중…</div></div>
+
+  <footer class="sig">모여라 · Made for the crew</footer>
+</div>
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ====================================================================
+   설정 — 배포 전에 아래 두 값을 채우면 모두가 바로 사용할 수 있어요.
+   (값을 비워두면 첫 화면에서 입력하는 임시 설정으로 동작합니다)
+   Supabase 대시보드 → Project Settings → API 에서 확인:
+   - Project URL  →  SUPABASE_URL
+   - anon public key  →  SUPABASE_ANON_KEY  (공개되어도 안전, RLS로 보호)
+==================================================================== */
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+
+/* ============================ 상태 ============================ */
+const DEFAULT_DEPTS = [
+  {id:'d1', name:'연출부', color:'#bf4a32'},
+  {id:'d2', name:'기획부', color:'#5b7553'},
+  {id:'d3', name:'편집부', color:'#c2872f'},
+];
+const DEPT_PALETTE = ['#bf4a32','#5b7553','#c2872f','#3d5a73','#8a5a7a','#4a6b6e','#a3603a','#6c6f3f'];
+const DEFAULT_CONFIG = { startTime:'09:00', endTime:'22:00', slotMin:60, dates:[], depts:JSON.parse(JSON.stringify(DEFAULT_DEPTS)) };
+
+let sb = null;
+let currentUser = null;
+let currentEvent = null;     // {id, owner, title, config}
+let participants = [];        // [{id,event_id,user_id,name,dept_id,avail}]
+let myPart = null;
+let currentTab = 'setup';
+let paintLevel = 1;
+let painting = false;
+let activeDepts = null;       // 결과 부서 필터
+let rtChannel = null;
+let pushTimer = null, availTimer = null;
+
+/* ============================ 유틸 ============================ */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const el = (h)=>{ const d=document.createElement('div'); d.innerHTML=h.trim(); return d.firstElementChild; };
+const esc = s => (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2000); }
+function deptById(id){ return (currentEvent?.config?.depts||[]).find(d=>d.id===id); }
+function isOwner(){ return currentUser && currentEvent && currentEvent.owner===currentUser.id; }
+function myName(){ return currentUser?.user_metadata?.name || (currentUser?.email||'').split('@')[0] || '나'; }
+
+function timeSlots(cfg){
+  const [sh,sm]=cfg.startTime.split(':').map(Number);
+  const [eh,em]=cfg.endTime.split(':').map(Number);
+  let cur=sh*60+sm, end=eh*60+em; if(end<=cur) end+=24*60;
+  const out=[];
+  for(let t=cur;t<end;t+=cfg.slotMin){ out.push(`${String(Math.floor(t/60)%24).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`); }
+  return out;
+}
+function fmtDate(d){
+  const dt=new Date(d+'T00:00:00');
+  const wd=['일','월','화','수','목','금','토'][dt.getDay()];
+  return `${dt.getMonth()+1}/${dt.getDate()}(${wd})`;
+}
+
+/* ============================ Supabase 설정 ============================ */
+function getSbCfg(){
+  if(SUPABASE_URL && SUPABASE_ANON_KEY) return {url:SUPABASE_URL, key:SUPABASE_ANON_KEY};
+  try{ return JSON.parse(localStorage.getItem('moyeora_sb'))||{}; }catch{ return {}; }
+}
+function initSb(){
+  const {url,key}=getSbCfg();
+  if(!url||!key||typeof supabase==='undefined') return false;
+  try{ sb=supabase.createClient(url,key); return true; }catch(e){ console.warn(e); return false; }
+}
+
+/* ============================ 부팅 / 라우팅 ============================ */
+async function boot(){
+  renderAuthBar();
+  if(!getSbCfg().url){ renderConfigScreen(); return; }
+  if(!initSb()){ renderConfigScreen(); return; }
+  const { data } = await sb.auth.getSession();
+  currentUser = data.session?.user || null;
+  sb.auth.onAuthStateChange((_e,session)=>{
+    const was = currentUser?.id;
+    currentUser = session?.user || null;
+    renderAuthBar();
+    if(currentUser?.id !== was) route();
+  });
+  route();
+}
+function route(){
+  renderAuthBar();
+  if(!currentUser){ renderAuth(); return; }
+  const m = location.hash.match(/e=([\w-]+)/);
+  if(m){ openEvent(m[1]); }
+  else { currentEvent=null; teardownRealtime(); renderDash(); }
+}
+window.addEventListener('hashchange', route);
+
+/* ============================ 상단 인증바 ============================ */
+function renderAuthBar(){
+  const bar=$('#authBar'); if(!bar) return;
+  if(currentUser){
+    bar.innerHTML = `<span class="uemail">${esc(currentUser.email)}</span>
+      <button class="btn sm" id="logoutBtn">로그아웃</button>`;
+    $('#logoutBtn').onclick=async()=>{ await sb.auth.signOut(); location.hash=''; toast('로그아웃했어요'); };
+  } else bar.innerHTML='';
+}
+
+/* ============================ 설정(키 입력) 화면 ============================ */
+function renderConfigScreen(){
+  const s=$('#screen');
+  s.innerHTML=`<div class="center-wrap">
+    <div class="card">
+      <h2>Supabase 연결</h2>
+      <p class="hint">실시간·로그인을 쓰려면 무료 Supabase 프로젝트가 필요해요. 대시보드 → <b>Project Settings → API</b>에서 두 값을 복사해 붙여넣으세요. (anon key는 공개돼도 안전합니다)</p>
+      <label class="fld">Project URL</label>
+      <input type="text" id="cfgUrl" placeholder="https://xxxx.supabase.co" />
+      <label class="fld">anon public key</label>
+      <input type="text" id="cfgKey" placeholder="eyJhbGciOi..." />
+      <div style="margin-top:18px"><button class="btn primary block" id="cfgSave">연결하기</button></div>
+      <div class="err" id="cfgErr"></div>
+      <p class="hint" style="margin-top:18px">아직 테이블을 안 만들었다면, 프로젝트의 <b>SQL Editor</b>에 동봉된 <code>supabase_setup.sql</code> 내용을 붙여넣고 실행하세요.</p>
+    </div>
+  </div>`;
+  $('#cfgSave').onclick=()=>{
+    const url=$('#cfgUrl').value.trim(), key=$('#cfgKey').value.trim();
+    if(!url||!key){ $('#cfgErr').textContent='두 값을 모두 입력하세요.'; return; }
+    localStorage.setItem('moyeora_sb', JSON.stringify({url,key}));
+    if(initSb()){ boot(); toast('연결되었어요'); } else $('#cfgErr').textContent='연결 실패 — 값을 다시 확인하세요.';
+  };
+}
+
+/* ============================ 로그인 / 회원가입 ============================ */
+let authMode='login';
+function renderAuth(){
+  teardownRealtime();
+  const s=$('#screen');
+  s.innerHTML=`<div class="center-wrap">
+    <div class="seg">
+      <button data-m="login" class="${authMode==='login'?'on':''}">로그인</button>
+      <button data-m="signup" class="${authMode==='signup'?'on':''}">회원가입</button>
+    </div>
+    <div class="card">
+      <div id="nameField" style="display:${authMode==='signup'?'block':'none'}">
+        <label class="fld">이름</label>
+        <input type="text" id="auName" placeholder="화면에 표시될 이름" />
+      </div>
+      <label class="fld">이메일</label>
+      <input type="email" id="auEmail" placeholder="you@example.com" autocomplete="email" />
+      <label class="fld">비밀번호</label>
+      <input type="password" id="auPw" placeholder="6자 이상" autocomplete="current-password" />
+      <div style="margin-top:20px">
+        <button class="btn primary block" id="auGo">${authMode==='login'?'로그인':'회원가입'}</button>
+      </div>
+      <div class="err" id="auMsg"></div>
+    </div>
+  </div>`;
+  s.querySelectorAll('.seg button').forEach(b=> b.onclick=()=>{ authMode=b.dataset.m; renderAuth(); });
+  $('#auGo').onclick=doAuth;
+  $('#auPw').addEventListener('keydown',e=>{ if(e.key==='Enter') doAuth(); });
+}
+async function doAuth(){
+  const email=$('#auEmail').value.trim(), pw=$('#auPw').value, msg=$('#auMsg');
+  msg.className='err'; msg.textContent='';
+  if(!email||!pw){ msg.textContent='이메일과 비밀번호를 입력하세요.'; return; }
+  $('#auGo').disabled=true; $('#auGo').textContent='처리 중…';
+  try{
+    if(authMode==='signup'){
+      const name=$('#auName').value.trim()||email.split('@')[0];
+      const { data, error } = await sb.auth.signUp({ email, password:pw, options:{ data:{ name } } });
+      if(error) throw error;
+      if(!data.session){ msg.className='ok'; msg.textContent='확인 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인하세요. (즉시 사용하려면 Supabase Auth 설정에서 "Confirm email"을 꺼도 됩니다)'; }
+      // 세션이 바로 생기면 onAuthStateChange가 라우팅
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password:pw });
+      if(error) throw error;
+    }
+  }catch(e){
+    msg.textContent = translateAuthErr(e.message||String(e));
+  }finally{
+    const b=$('#auGo'); if(b){ b.disabled=false; b.textContent= authMode==='login'?'로그인':'회원가입'; }
+  }
+}
+function translateAuthErr(m){
+  if(/Invalid login/i.test(m)) return '이메일 또는 비밀번호가 올바르지 않아요.';
+  if(/already registered/i.test(m)) return '이미 가입된 이메일이에요. 로그인해 주세요.';
+  if(/Password should be/i.test(m)) return '비밀번호는 6자 이상이어야 해요.';
+  if(/Email not confirmed/i.test(m)) return '메일 인증이 필요해요. 받은 메일의 링크를 눌러주세요.';
+  return m;
+}
+
+/* ============================ 대시보드 (내 일정) ============================ */
+async function renderDash(){
+  const s=$('#screen');
+  s.innerHTML=`<div class="spin">일정 불러오는 중…</div>`;
+  const events = await getMyEvents();
+  let list = events.length
+    ? `<div class="evt-list">`+events.map(e=>`
+        <div class="evt-card" data-id="${e.id}">
+          <div class="et">
+            <h3>${esc(e.title||'제목 없는 일정')}</h3>
+            <div class="meta">${(e.config?.dates?.length||0)}개 날짜 · ${(e.config?.depts?.length||0)}개 부서</div>
+          </div>
+          <span class="role">${e.owner===currentUser.id?'주최':'참여'}</span>
+        </div>`).join('')+`</div>`
+    : `<div class="empty">아직 일정이 없어요. 새로 만들거나, 받은 링크로 참여하세요.</div>`;
+  s.innerHTML=`
+    <div class="dash-head">
+      <h2>내 일정</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="joinByCode">코드로 참여</button>
+        <button class="btn primary" id="newEvent">+ 새 일정 만들기</button>
+      </div>
+    </div>
+    ${list}`;
+  $$('#screen .evt-card').forEach(c=> c.onclick=()=>{ location.hash='e='+c.dataset.id; });
+  $('#newEvent').onclick=createEvent;
+  $('#joinByCode').onclick=()=>{
+    const code=prompt('일정 코드 또는 링크를 붙여넣으세요'); if(!code) return;
+    const m=code.match(/e=([\w-]+)/) || code.match(/([0-9a-f-]{36})/i);
+    if(m) location.hash='e='+m[1]; else toast('코드를 인식하지 못했어요');
+  };
+}
+async function getMyEvents(){
+  const out={};
+  const { data:owned } = await sb.from('events').select('*').eq('owner', currentUser.id);
+  (owned||[]).forEach(e=> out[e.id]=e);
+  const { data:joined } = await sb.from('participants').select('events(*)').eq('user_id', currentUser.id);
+  (joined||[]).forEach(r=>{ if(r.events) out[r.events.id]=out[r.events.id]||r.events; });
+  return Object.values(out).sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
+}
+async function createEvent(){
+  const { data, error } = await sb.from('events')
+    .insert([{ owner:currentUser.id, title:'새 일정', config:JSON.parse(JSON.stringify(DEFAULT_CONFIG)) }])
+    .select().single();
+  if(error){ toast('생성 실패: '+error.message); return; }
+  // 주최자도 참가자로 등록
+  await sb.from('participants').insert([{ event_id:data.id, user_id:currentUser.id, name:myName(), dept_id:DEFAULT_CONFIG.depts[0].id, avail:{} }]);
+  location.hash='e='+data.id;
+}
+
+/* ============================ 일정 열기 + 실시간 ============================ */
+async function openEvent(id){
+  const s=$('#screen'); s.innerHTML=`<div class="spin">일정 불러오는 중…</div>`;
+  const { data:ev, error } = await sb.from('events').select('*').eq('id',id).single();
+  if(error||!ev){ toast('일정을 찾을 수 없어요'); location.hash=''; return; }
+  currentEvent=ev;
+  await refetchParticipants();
+  myPart = participants.find(p=>p.user_id===currentUser.id)||null;
+  currentTab='setup';
+  subscribeRealtime(id);
+  renderEvent();
+}
+async function refetchParticipants(){
+  const { data } = await sb.from('participants').select('*').eq('event_id', currentEvent.id);
+  participants = data||[];
+  myPart = participants.find(p=>p.user_id===currentUser.id)||null;
+}
+function subscribeRealtime(id){
+  teardownRealtime();
+  rtChannel = sb.channel('event-'+id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'participants',filter:'event_id=eq.'+id}, async ()=>{
+      await refetchParticipants();
+      if(!(currentTab==='respond' && painting)) renderTab();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'events',filter:'id=eq.'+id}, (payload)=>{
+      if(payload.eventType==='DELETE'){ toast('일정이 삭제되었어요'); location.hash=''; return; }
+      currentEvent=payload.new;
+      if(!(currentTab==='respond' && painting)) renderTab();
+    })
+    .subscribe();
+}
+function teardownRealtime(){ if(rtChannel){ sb.removeChannel(rtChannel); rtChannel=null; } }
+
+/* ============================ 일정 화면 셸 ============================ */
+function renderEvent(){
+  const s=$('#screen');
+  s.innerHTML=`
+    <button class="back-link" id="backDash">← 내 일정으로</button>
+    <div class="evt-title" id="evtTitle">${esc(currentEvent.title||'제목 없는 일정')}</div>
+    <div class="evt-sub">${isOwner()?'주최자':'참여자'} · 참여 ${participants.length}명</div>
+    <div class="tabs">
+      <button data-tab="setup" class="active"><span class="tn">01</span>설정</button>
+      <button data-tab="respond"><span class="tn">02</span>응답</button>
+      <button data-tab="result"><span class="tn">03</span>결과</button>
+      <button data-tab="share"><span class="tn">04</span>공유</button>
+    </div>
+    <div id="eventBody"></div>`;
+  $('#backDash').onclick=()=>{ location.hash=''; };
+  $$('#screen .tabs button').forEach(b=> b.onclick=()=>{
+    currentTab=b.dataset.tab;
+    $$('#screen .tabs button').forEach(x=>x.classList.toggle('active',x===b));
+    renderTab();
+  });
+  renderTab();
+}
+function renderTab(){
+  // 탭 활성 표시 동기화
+  $$('#screen .tabs button').forEach(x=> x.classList.toggle('active', x.dataset.tab===currentTab));
+  const sub=$('.evt-sub'); if(sub) sub.textContent=`${isOwner()?'주최자':'참여자'} · 참여 ${participants.length}명`;
+  if(currentTab==='setup') renderSetup();
+  else if(currentTab==='respond') renderRespond();
+  else if(currentTab==='result') renderResult();
+  else if(currentTab==='share') renderShare();
+}
+
+/* ============================ 01 설정 ============================ */
+function renderSetup(){
+  const cfg=currentEvent.config, owner=isOwner(), dis=owner?'':'disabled';
+  const body=$('#eventBody');
+  body.innerHTML=`
+    ${owner?'':'<div class="banner">설정은 <b>주최자</b>만 수정할 수 있어요. 당신은 <b>응답</b> 탭에서 가능한 시간을 표시하면 됩니다.</div>'}
+    <div class="card">
+      <h2>일정 정보</h2>
+      <p class="hint">제목과 날짜·시간 범위를 정하세요. 변경하면 참여자 모두에게 실시간 반영됩니다.</p>
+      <label class="fld">일정 제목</label>
+      <input type="text" id="f_title" value="${esc(currentEvent.title)}" ${dis} />
+      <div class="row">
+        <div><label class="fld">시작 시간</label><input type="time" id="f_start" value="${cfg.startTime}" step="1800" ${dis} /></div>
+        <div><label class="fld">종료 시간</label><input type="time" id="f_end" value="${cfg.endTime}" step="1800" ${dis} /></div>
+        <div><label class="fld">단위</label>
+          <select id="f_slot" ${dis}>
+            <option value="30" ${cfg.slotMin==30?'selected':''}>30분</option>
+            <option value="60" ${cfg.slotMin==60?'selected':''}>1시간</option>
+            <option value="15" ${cfg.slotMin==15?'selected':''}>15분</option>
+          </select></div>
+      </div>
+      ${owner?`<label class="fld">날짜 추가</label>
+      <div class="row"><input type="date" id="f_date" style="flex:2" /><button class="btn primary" id="f_addDate" style="flex:0 0 auto">+ 추가</button></div>`:''}
+      <div id="dateChips" class="filters" style="margin-top:14px"></div>
+    </div>
+
+    <div class="card">
+      <h2>부서 / 팀</h2>
+      <p class="hint">${owner?'부서를 자유롭게 추가·수정하세요. 색상으로 구분됩니다.':'이 일정의 부서 구성입니다.'}</p>
+      <div class="dept-list" id="deptList"></div>
+      ${owner?'<button class="btn ghost sm" id="addDept" style="margin-top:12px">+ 부서 추가</button>':''}
+    </div>
+
+    <div class="card">
+      <h2>참여자 명단</h2>
+      <p class="hint">계정으로 참여한 사람들이에요. (응답 탭에서 직접 참여)</p>
+      <div class="stat-row">
+        <div class="box"><b>${participants.length}</b><span>참여자</span></div>
+        <div class="box"><b>${cfg.depts.length}</b><span>부서</span></div>
+        <div class="box"><b>${cfg.dates.length}</b><span>날짜</span></div>
+      </div>
+      <div class="member-grid" id="memberGrid" style="margin-top:14px"></div>
+    </div>
+    ${owner?'<div class="card"><h2>위험 구역</h2><p class="hint">이 일정을 영구 삭제합니다.</p><button class="btn danger" id="deleteEvent">일정 삭제</button></div>':''}
+  `;
+  renderDateChips(); renderDepts(); renderRoster();
+  if(owner){
+    $('#f_title').oninput=e=>{ currentEvent.title=e.target.value; $('#evtTitle').textContent=e.target.value||'제목 없는 일정'; pushConfig(); };
+    $('#f_start').onchange=e=>{ currentEvent.config.startTime=e.target.value; pushConfig(); };
+    $('#f_end').onchange=e=>{ currentEvent.config.endTime=e.target.value; pushConfig(); };
+    $('#f_slot').onchange=e=>{ currentEvent.config.slotMin=+e.target.value; pushConfig(); };
+    $('#f_addDate').onclick=()=>{ const v=$('#f_date').value; if(!v) return; if(!cfg.dates.includes(v)) cfg.dates.push(v); $('#f_date').value=''; pushConfig(); renderDateChips(); };
+    $('#addDept').onclick=()=>{ cfg.depts.push({id:'d'+Date.now().toString(36), name:'새 부서', color:DEPT_PALETTE[cfg.depts.length%DEPT_PALETTE.length]}); pushConfig(); renderDepts(); };
+    $('#deleteEvent').onclick=deleteEvent;
+  }
+}
+function renderDateChips(){
+  const box=$('#dateChips'); if(!box) return; const owner=isOwner(); box.innerHTML='';
+  const dates=currentEvent.config.dates;
+  if(!dates.length){ box.innerHTML='<span class="empty" style="padding:6px">아직 날짜가 없어요</span>'; return; }
+  dates.slice().sort().forEach(d=>{
+    const c=document.createElement('button'); c.className='chip on'; c.innerHTML=fmtDate(d)+(owner?' ✕':'');
+    if(owner) c.onclick=()=>{ currentEvent.config.dates=dates.filter(x=>x!==d); pushConfig(); renderDateChips(); };
+    box.appendChild(c);
+  });
+}
+function renderDepts(){
+  const list=$('#deptList'); if(!list) return; const owner=isOwner(); list.innerHTML='';
+  currentEvent.config.depts.forEach(d=>{
+    const cnt=participants.filter(p=>p.dept_id===d.id).length;
+    const row=document.createElement('div'); row.className='dept-item';
+    row.innerHTML=`<input type="color" value="${d.color}" ${owner?'':'disabled'} />
+      <input type="text" class="dept-name" value="${esc(d.name)}" ${owner?'':'disabled'} />
+      <span class="count">${cnt}명</span>
+      ${owner?'<button class="btn danger sm">삭제</button>':''}`;
+    if(owner){
+      row.querySelector('input[type=color]').oninput=e=>{ d.color=e.target.value; pushConfig(); renderRoster(); };
+      row.querySelector('.dept-name').oninput=e=>{ d.name=e.target.value; pushConfig(); };
+      const del=row.querySelector('.btn.danger'); if(del) del.onclick=()=>{
+        if(participants.some(p=>p.dept_id===d.id)){ toast('이 부서에 참여자가 있어요'); return; }
+        currentEvent.config.depts=currentEvent.config.depts.filter(x=>x.id!==d.id); pushConfig(); renderDepts();
+      };
+    }
+    list.appendChild(row);
+  });
+}
+function renderRoster(){
+  const grid=$('#memberGrid'); if(!grid) return; grid.innerHTML='';
+  if(!participants.length){ grid.innerHTML='<div class="empty">아직 참여자가 없어요</div>'; return; }
+  participants.forEach(p=>{
+    const d=deptById(p.dept_id)||{color:'#999',name:'미지정'};
+    const me=p.user_id===currentUser.id;
+    grid.appendChild(el(`<div class="member"><span class="dot" style="background:${d.color}"></span>
+      <span class="mname">${esc(p.name)}${me?' (나)':''}<div class="mdept">${esc(d.name)}</div></span></div>`));
+  });
+}
+let cfgTimer=null;
+function pushConfig(){
+  if(!isOwner()) return;
+  clearTimeout(cfgTimer);
+  cfgTimer=setTimeout(async()=>{
+    await sb.from('events').update({ title:currentEvent.title, config:currentEvent.config }).eq('id',currentEvent.id);
+  },350);
+}
+async function deleteEvent(){
+  if(!confirm('정말 이 일정을 삭제할까요? 되돌릴 수 없어요.')) return;
+  await sb.from('events').delete().eq('id',currentEvent.id);
+  toast('삭제했어요'); location.hash='';
+}
+
+/* ============================ 02 응답 ============================ */
+function renderRespond(){
+  const body=$('#eventBody'), cfg=currentEvent.config;
+  if(!cfg.dates.length){ body.innerHTML='<div class="card"><div class="empty">주최자가 아직 날짜를 정하지 않았어요</div></div>'; return; }
+  if(!myPart){
+    body.innerHTML=`<div class="card">
+      <h2>이 일정에 참여하기</h2>
+      <p class="hint">이름과 부서를 선택하면 가능한 시간을 표시할 수 있어요.</p>
+      <button class="btn primary" id="joinBtn">참여하기</button>
+    </div>`;
+    $('#joinBtn').onclick=openJoinModal; return;
+  }
+  const d=deptById(myPart.dept_id)||{name:'미지정',color:'#999'};
+  body.innerHTML=`
+    <div class="card">
+      <div class="who-bar">
+        <div style="flex:1"><span style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700">당신</span>
+        <div style="font-family:var(--serif);font-size:19px;font-weight:600;margin-top:2px"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${d.color};margin-right:7px"></span>${esc(myPart.name)} · ${esc(d.name)}</div></div>
+        <button class="btn sm" id="editProfile">이름·부서 변경</button>
+      </div>
+      <p class="hint">칸을 드래그(모바일은 터치)해서 가능한 시간을 칠하세요. 자동 저장됩니다.</p>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--avail)"></i> 가능</span>
+        <span><i class="swatch" style="background:var(--pref)"></i> 선호(꼭 좋음)</span>
+        <span><i class="swatch" style="background:var(--fill);border-color:var(--line-2)"></i> 불가</span>
+      </div>
+      <div class="who-bar">
+        <span style="font-size:13px;color:var(--muted)">칠하기 모드:</span>
+        <div class="paint-modes" id="paintModes">
+          <button data-lvl="1" class="${paintLevel===1?'sel':''}">가능</button>
+          <button data-lvl="2" class="${paintLevel===2?'sel':''}">선호</button>
+          <button data-lvl="0" class="${paintLevel===0?'sel':''}">지우기</button>
+        </div>
+        <button class="btn sm ghost" id="clearMine" style="margin-left:auto">내 응답 초기화</button>
+      </div>
+      <div id="respondGridArea"></div>
+    </div>`;
+  $('#editProfile').onclick=openJoinModal;
+  $('#paintModes').querySelectorAll('button').forEach(b=> b.onclick=()=>{ paintLevel=+b.dataset.lvl; $('#paintModes').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b)); });
+  $('#clearMine').onclick=()=>{ if(confirm('내 응답을 모두 지울까요?')){ myPart.avail={}; saveMyAvail(); renderRespond(); } };
+  const mine=myPart.avail||(myPart.avail={});
+  $('#respondGridArea').innerHTML=buildGrid(cfg,{ cellClass:(d,t)=>'slot lvl'+(mine[`${d}|${t}`]||0), cellContent:()=>'' });
+  bindPaint(mine);
+}
+function buildGrid(cfg,{cellClass,cellContent}){
+  const dates=cfg.dates.slice().sort(), slots=timeSlots(cfg);
+  let h='<div class="grid-wrap"><table class="grid"><thead><tr><th class="tlabel"></th>';
+  dates.forEach(d=> h+=`<th>${fmtDate(d)}</th>`);
+  h+='</tr></thead><tbody>';
+  slots.forEach(t=>{
+    h+=`<tr class="${t.endsWith(':00')?'hourline':''}"><td class="tlabel">${t}</td>`;
+    dates.forEach(d=> h+=`<td class="${cellClass(d,t)}" data-date="${d}" data-time="${t}">${cellContent(d,t)}</td>`);
+    h+='</tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+function bindPaint(mine){
+  let applyLvl=null;
+  function apply(cell){ const k=`${cell.dataset.date}|${cell.dataset.time}`; if(applyLvl===0) delete mine[k]; else mine[k]=applyLvl; cell.className='slot lvl'+(mine[k]||0); }
+  $$('#respondGridArea td.slot').forEach(cell=>{
+    cell.addEventListener('mousedown',e=>{ e.preventDefault(); painting=true; applyLvl=paintLevel; apply(cell); });
+    cell.addEventListener('mouseenter',()=>{ if(painting) apply(cell); });
+    cell.addEventListener('touchstart',()=>{ painting=true; applyLvl=paintLevel; apply(cell); },{passive:true});
+  });
+  $('#respondGridArea').addEventListener('touchmove',e=>{
+    if(!painting) return; const t=e.touches[0]; const x=document.elementFromPoint(t.clientX,t.clientY);
+    if(x&&x.classList.contains('slot')) apply(x);
+  },{passive:true});
+  const end=()=>{ if(painting){ painting=false; saveMyAvail(); } };
+  window.addEventListener('mouseup',end); window.addEventListener('touchend',end);
+}
+function saveMyAvail(){
+  if(!myPart) return;
+  clearTimeout(availTimer);
+  availTimer=setTimeout(async()=>{
+    await sb.from('participants').update({ avail:myPart.avail, updated_at:new Date().toISOString() }).eq('id',myPart.id);
+  },400);
+}
+
+/* ============================ 참여 / 프로필 모달 ============================ */
+function openJoinModal(){
+  const cfg=currentEvent.config;
+  const isEdit=!!myPart;
+  const opts=cfg.depts.map(d=>`<option value="${d.id}" ${myPart&&myPart.dept_id===d.id?'selected':''}>${esc(d.name)}</option>`).join('');
+  const m=el(`<div class="modal"><div class="modal-card">
+    <h2>${isEdit?'프로필 수정':'일정에 참여'}</h2>
+    <p class="hint">이름과 소속 부서를 선택하세요.</p>
+    <label class="fld">이름</label>
+    <input type="text" id="jName" value="${esc(myPart?myPart.name:myName())}" />
+    <label class="fld">부서</label>
+    <select id="jDept">${opts}</select>
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn" id="jCancel" style="flex:1">취소</button>
+      <button class="btn primary" id="jOk" style="flex:2">${isEdit?'저장':'참여하기'}</button>
+    </div>
+  </div></div>`);
+  $('#modalRoot').appendChild(m);
+  $('#jCancel').onclick=()=> m.remove();
+  $('#jOk').onclick=async()=>{
+    const name=$('#jName').value.trim()||myName(), dept=$('#jDept').value;
+    $('#jOk').disabled=true;
+    if(isEdit){
+      await sb.from('participants').update({ name, dept_id:dept }).eq('id',myPart.id);
+    } else {
+      await sb.from('participants').insert([{ event_id:currentEvent.id, user_id:currentUser.id, name, dept_id:dept, avail:{} }]);
+    }
+    m.remove();
+    await refetchParticipants();
+    renderTab();
+    toast(isEdit?'저장했어요':'참여했어요');
+  };
+}
+
+/* ============================ 03 결과 ============================ */
+function renderResult(){
+  const body=$('#eventBody'), cfg=currentEvent.config;
+  body.innerHTML=`
+    <div class="card">
+      <h2>모두의 가능 시간</h2>
+      <p class="hint">색이 진할수록 많은 사람이 가능합니다. 칸을 누르면 누가 가능한지 볼 수 있어요.</p>
+      <div class="filters" id="deptFilters"></div>
+      <div class="best" id="bestList"></div>
+      <div id="resultGridArea"></div>
+      <div id="slotDetail"></div>
+    </div>`;
+  renderDeptFilters();
+  if(!cfg.dates.length || !participants.length){ $('#resultGridArea').innerHTML='<div class="empty">아직 응답이 없어요</div>'; $('#bestList').innerHTML=''; return; }
+  const pool=participants.filter(p=> !activeDepts || activeDepts.has(p.dept_id));
+  const total=pool.length||1;
+  const countAt=(d,t)=>{ let c=0,pref=0; pool.forEach(p=>{ const lv=(p.avail||{})[`${d}|${t}`]||0; if(lv>=1){c++; if(lv===2)pref++;} }); return {c,pref}; };
+  $('#resultGridArea').innerHTML=buildGrid(cfg,{
+    cellClass:()=>'slot',
+    cellContent:(d,t)=>{ const {c,pref}=countAt(d,t); if(!c) return ''; return `<div class="mini" style="background:${heatColor(c/total)}">${c}${pref?'★':''}</div>`; }
+  });
+  $('#resultGridArea').classList.add('heat');
+  $$('#resultGridArea td.slot').forEach(td=> td.onclick=()=> showDetail(td.dataset.date,td.dataset.time,pool));
+  const scores=[]; cfg.dates.slice().sort().forEach(d=> timeSlots(cfg).forEach(t=>{ const {c,pref}=countAt(d,t); if(c) scores.push({d,t,c,pref}); }));
+  scores.sort((a,b)=> b.c-a.c || b.pref-a.pref);
+  const bl=$('#bestList');
+  if(!scores.length){ bl.innerHTML='<div class="empty">아직 응답이 없어요</div>'; }
+  else bl.innerHTML='', scores.slice(0,5).forEach((s,i)=>{
+    const it=el(`<div class="best-item"><div class="rank">${String(i+1).padStart(2,'0')}</div>
+      <div class="when">${fmtDate(s.d)} ${s.t}</div>
+      <div class="stat">${s.c}/${total}명 가능${s.pref?` · 선호 ${s.pref}`:''}</div></div>`);
+    it.onclick=()=> showDetail(s.d,s.t,pool); bl.appendChild(it);
+  });
+}
+function heatColor(r){ const a=0.12+r*0.82; return `rgba(191,74,50,${a.toFixed(2)})`; }
+function renderDeptFilters(){
+  const box=$('#deptFilters'); box.innerHTML='';
+  const all=el(`<button class="chip ${activeDepts===null?'on':''}">전체</button>`);
+  all.onclick=()=>{ activeDepts=null; renderResult(); }; box.appendChild(all);
+  currentEvent.config.depts.forEach(d=>{
+    const on=activeDepts&&activeDepts.has(d.id);
+    const c=el(`<button class="chip ${on?'on':''}"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${d.color};margin-right:6px"></span>${esc(d.name)}</button>`);
+    c.onclick=()=>{
+      if(activeDepts===null) activeDepts=new Set(currentEvent.config.depts.map(x=>x.id));
+      if(activeDepts.has(d.id)) activeDepts.delete(d.id); else activeDepts.add(d.id);
+      if(activeDepts.size===currentEvent.config.depts.length) activeDepts=null;
+      renderResult();
+    };
+    box.appendChild(c);
+  });
+}
+function showDetail(date,t,pool){
+  const can=[],cant=[];
+  pool.forEach(p=>{ const lv=(p.avail||{})[`${date}|${t}`]||0; (lv>=1?can:cant).push({p,lv}); });
+  const grp=arr=>{ const g={}; arr.forEach(o=>{ (g[o.p.dept_id]=g[o.p.dept_id]||[]).push(o); }); return g; };
+  const block=(title,g)=>{
+    let h=`<div class="grp"><div class="ttl">${title}</div><div class="names">`; let any=false;
+    currentEvent.config.depts.forEach(d=>{ (g[d.id]||[]).forEach(({p,lv})=>{ any=true; h+=`<span class="n" style="border-left:3px solid ${d.color}">${esc(p.name)}${lv===2?' ★':''}</span>`; }); });
+    if(!any) h+='<span style="color:var(--muted);font-size:12.5px">없음</span>';
+    return h+'</div></div>';
+  };
+  $('#slotDetail').innerHTML=`<div class="detail">
+    <h3>${fmtDate(date)} ${t} · ${can.length}/${pool.length}명 가능</h3>
+    ${block('가능 (★=선호)',grp(can))}${block('불가',grp(cant))}</div>`;
+}
+
+/* ============================ 04 공유 ============================ */
+function renderShare(){
+  const body=$('#eventBody');
+  const link=location.origin+location.pathname+'#e='+currentEvent.id;
+  body.innerHTML=`
+    <div class="card">
+      <h2>공유</h2>
+      <p class="hint">아래 링크를 팀원에게 보내세요. 받은 사람은 로그인(또는 회원가입) 후 이 일정에 참여해 본인 시간을 표시합니다. 모든 입력은 실시간으로 함께 보여요.</p>
+      <div class="share-box">
+        <div class="lbl">초대 링크</div>
+        <div class="desc">카톡·메신저로 그대로 보내면 됩니다.</div>
+        <div class="linkrow">
+          <input type="text" id="evtLink" readonly value="${link}" />
+          <button class="btn primary" id="copyEvtLink" style="flex:0 0 auto">복사</button>
+        </div>
+      </div>
+      <div class="share-box">
+        <div class="lbl">실시간 연결됨 <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--avail);margin-left:4px"></span></div>
+        <div class="desc">현재 ${participants.length}명이 이 일정에 참여 중입니다. 누군가 시간을 칠하면 즉시 결과에 반영돼요.</div>
+      </div>
+    </div>`;
+  $('#copyEvtLink').onclick=async()=>{
+    try{ await navigator.clipboard.writeText(link); }catch{ $('#evtLink').select(); document.execCommand('copy'); }
+    toast('초대 링크를 복사했어요');
+  };
+}
+
+/* ============================ 시작 ============================ */
+boot();
+</script>
+</body>
+</html>
